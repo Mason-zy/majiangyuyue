@@ -16,16 +16,16 @@ Page({
 		ProjectBiz.initPage(this);
 	},
 
-	// _loadList: async function () {
-	// 	let opts = {
-	// 		title: 'bar'
-	// 	}
-	// 	await cloudHelper.callCloudSumbit('home/list', {}, opts).then(res => {
-	// 		this.setData({
-	// 			...res.data
-	// 		});
-	// 	})
-	// },
+	_loadList: async function () {
+		let opts = {
+			title: 'bar'
+		}
+		await cloudHelper.callCloudSumbit('home/list', {}, opts).then(res => {
+			this.setData({
+				...res.data
+			});
+		})
+	},
 
 	/**
 	 * 生命周期函数--监听页面初次渲染完成
