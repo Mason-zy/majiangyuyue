@@ -534,44 +534,54 @@ class AdminMeetService extends BaseProjectAdminService {
 		endDay,
 		status
 	}) {
-		let where = {
-			JOIN_MEET_ID: meetId,
-			JOIN_MEET_DAY: ['between', startDay, endDay]
-		};
+		try {
+			let where = {
+				JOIN_MEET_ID: meetId,
+				JOIN_MEET_DAY: ['between', startDay, endDay]
+			};
 
-		if (util.isDefined(status) && status != 'all') {
-			where.JOIN_STATUS = Number(status);
+			if (util.isDefined(status) && status != 'all') {
+				where.JOIN_STATUS = Number(status);
+			}
+
+			let orderBy = {
+				JOIN_MEET_DAY: 'asc',
+				JOIN_MEET_TIME_START: 'asc',
+				JOIN_ADD_TIME: 'asc'
+			};
+
+			let joins = await JoinModel.getAll(where, '*', orderBy);
+
+			let data = [];
+			for (let k = 0; k < joins.length; k++) {
+				let join = joins[k];
+				let line = [
+					join.JOIN_MEET_DAY,
+					join.JOIN_MEET_TIME_START,
+					join.JOIN_MEET_TITLE,
+					join.JOIN_STATUS == JoinModel.STATUS.SUCC ? '预约成功' : '已取消',
+					...join.JOIN_FORMS.map(f => f.val)
+				];
+				data.push(line);
+			}
+
+			let fileName = '预约名单' + startDay + '-' + endDay + '.xlsx';
+
+			let result = await exportUtil.exportDataExcel(EXPORT_JOIN_DATA_KEY, '预约数据', data.length, data);
+
+			if (!result || !result.url) {
+				throw new Error('文件生成失败');
+			}
+
+			console.log(`导出成功：${fileName}，共 ${joins.length} 条记录`);
+
+			return {
+				total: joins.length
+			};
+		} catch (error) {
+			console.error('导出预约数据失败:', error);
+			throw new Error('导出预约数据失败: ' + error.message);
 		}
-
-		let orderBy = {
-			JOIN_MEET_DAY: 'asc',
-			JOIN_MEET_TIME_START: 'asc',
-			JOIN_ADD_TIME: 'asc'
-		};
-
-		let joins = await JoinModel.getAll(where, '*', orderBy);
-
-		let data = [];
-		for (let k = 0; k < joins.length; k++) {
-			let join = joins[k];
-			let line = [
-				join.JOIN_MEET_DAY,
-				join.JOIN_MEET_TIME_START,
-				join.JOIN_MEET_TITLE,
-				join.JOIN_STATUS == JoinModel.STATUS.SUCC ? '预约成功' : '已取消',
-				...join.JOIN_FORMS.map(f => f.val)
-			];
-			data.push(line);
-		}
-
-		let fileName = '预约名单' + startDay + '-' + endDay + '.xlsx';
-
-		let xlsxData = await exportUtil.dataToExcel(fileName, data);
-
-		return {
-			filename: fileName,
-			data: xlsxData
-		};
 	}
 
 }
