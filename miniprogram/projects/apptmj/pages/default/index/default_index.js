@@ -22,7 +22,9 @@ Page({
 		}
 		await cloudHelper.callCloudSumbit('home/list', {}, opts).then(res => {
 			this.setData({
-				...res.data
+				newsList: res.data.newsList
+				// 移除 meetList 的设置
+				// meetList: res.data.meetList
 			});
 		})
 	},

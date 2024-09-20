@@ -131,31 +131,6 @@ Page({
 		}
 	},
 
-	_setVouch: async function (e) {
-		if (!AdminBiz.isAdmin(this)) return;
-
-		let id = pageHelper.dataset(e, 'id');
-		let vouch = pageHelper.dataset(e, 'vouch');
-		if (!id) return;
-
-		let params = {
-			id,
-			vouch
-		}
-
-		try {
-			await cloudHelper.callCloudSumbit('admin/meet_vouch', params).then(res => {
-				pageHelper.modifyListNode(id, this.data.dataList.list, 'MEET_VOUCH', vouch);
-				this.setData({
-					dataList: this.data.dataList
-				});
-				pageHelper.showSuccToast('设置成功');
-			});
-		} catch (err) {
-			console.log(err);
-		}
-	},
-
 	bindMoreSelectTap: async function (e) {
 		if (!AdminBiz.isAdmin(this)) return;
 		let idx = pageHelper.dataset(e, 'idx');
@@ -163,10 +138,7 @@ Page({
 		let order = this.data.dataList.list[idx].MEET_ORDER;
 		let orderDesc = (order == 0) ? '取消置顶' : '置顶';
 
-		let vouch = this.data.dataList.list[idx].MEET_VOUCH;
-		let vouchDesc = (vouch == 0) ? '推荐到首页' : '取消首页推荐';
-
-		let itemList = ['预览', orderDesc, vouchDesc, '生成专属二维码'];
+		let itemList = ['预览', orderDesc, '生成专属二维码'];
 
 		wx.showActionSheet({
 			itemList,
@@ -185,13 +157,7 @@ Page({
 						await this._setSort(e);
 						break;
 					}
-					case 2: { //上首页 
-						vouch = (vouch == 0) ? 1 : 0;
-						e.currentTarget.dataset['vouch'] = vouch;
-						await this._setVouch(e);
-						break;
-					}
-					case 3: { //二维码 
+					case 2: { //二维码 
 						let title = encodeURIComponent(pageHelper.dataset(e, 'title'));
 						let qr = encodeURIComponent(pageHelper.dataset(e, 'qr'));
 						wx.navigateTo({
@@ -305,7 +271,7 @@ Page({
 			{ label: '使用中', type: 'status', value: 1 },
 			{ label: '已停止', type: 'status', value: 9 },
 			{ label: '已关闭', type: 'status', value: 10 }, 
-			{ label: '首页推荐', type: 'vouch', value: 'vouch' },
+			// { label: '首页推荐', type: 'vouch', value: 'vouch' },
 			{ label: '置顶', type: 'top', value: 'top' },
 		];
 
