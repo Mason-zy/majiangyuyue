@@ -12,7 +12,9 @@ const timeUtil = require('../../../../framework/utils/time_util.js');
 const dataUtil = require('../../../../framework/utils/data_util.js');
 const UserModel = require('../../model/user_model.js');
 const AdminHomeService = require('./admin_home_service.js');
-
+const JoinModel = require('../../model/join_model.js');
+const LogModel = require('../../../../framework/platform/model/log_model.js');
+const cloudBase = require('../../../../framework/cloud/cloud_base.js');
 // 导出用户数据KEY
 const EXPORT_USER_DATA_KEY = 'EXPORT_USER_DATA';
 
@@ -32,7 +34,7 @@ class AdminUserService extends BaseProjectAdminService {
 
 	/** 取得用户分页列表 */
 	async getUserList({
-		search, // 搜索条件
+		search, // 搜条件
 		sortType, // 搜索菜单
 		sortVal, // 搜索菜单
 		orderBy, // 排序
@@ -87,13 +89,39 @@ class AdminUserService extends BaseProjectAdminService {
 	}
 
 	async statusUser(id, status, reason) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (!id) this.AppError('未提供用户id');
+		if (typeof status !== 'number') this.AppError('状态必须为数字');
+
+		let user = await UserModel.getOne({ USER_MINI_OPENID: id });
+		if (!user) this.AppError('用户不存在');
+
+		let data = {
+			USER_STATUS: status
+		}
+
+		if (status == UserModel.STATUS.DISABLE) {
+			data.USER_CLOSE_REASON = reason;
+		}
+
+		await UserModel.edit({ USER_MINI_OPENID: id }, data);
+
+		this.insertLog('修改了用户状态', user, LogModel.TYPE.USER);
 	}
 
 	/**删除用户 */
 	async delUser(id) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (!id) this.AppError('未提供用户id');
 
+		let user = await UserModel.getOne({ USER_MINI_OPENID: id });
+		if (!user) this.AppError('用户不存在');
+
+		await UserModel.del({ USER_MINI_OPENID: id });
+
+		// 删除用户相关数据
+		await JoinModel.del({ JOIN_USER_ID: id });
+		// 如果有其他与用户相关的数据表,也需要在这里删除
+
+		this.insertLog('删除了用户', user, LogModel.TYPE.USER);
 	}
 
 	// #####################导出用户数据
@@ -110,9 +138,59 @@ class AdminUserService extends BaseProjectAdminService {
 
 	/**导出用户数据 */
 	async exportUserDataExcel(condition, fields) {
+		try {
+			console.log('Exporting user data with encoded condition:', condition);
+			
+			// 解码 condition
+			condition = JSON.parse(decodeURIComponent(condition));
+			
+			// 确保包含正确的项目 ID
+			if (!condition.and) condition.and = {};
+			condition.and._pid = this.getProjectId();
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+			console.log('Decoded condition:', JSON.stringify(condition));
+			console.log('Fields:', fields);
 
+			let userList = await UserModel.getAll(condition, fields);
+
+			console.log('User list length:', userList ? userList.length : 0);
+
+			if (!userList || userList.length === 0) {
+				this.AppError('没有找到符合条件的用户数据');
+			}
+
+			// 定义表头
+			let header = ['用户ID', '用户昵称', '手机号', '注册时间', '最后登录时间', '状态', '备注'];
+
+			// 转换数据为二维数组
+			let data = [header];
+			userList.forEach(user => {
+				data.push([
+					user.USER_MINI_OPENID,
+					user.USER_NAME,
+					user.USER_MOBILE || '未绑定',
+					timeUtil.timestamp2Time(user.USER_ADD_TIME),
+					user.USER_LOGIN_TIME ? timeUtil.timestamp2Time(user.USER_LOGIN_TIME) : '从未登录',
+					user.USER_STATUS == 1 ? '正常' : '禁用',
+					user.USER_MEMO || ''
+				]);
+			});
+
+			let fileName = `用户数据_${timeUtil.time('YMD_HIS')}.xlsx`;
+			let result = await exportUtil.exportDataExcel(EXPORT_USER_DATA_KEY, '用户数据', data.length - 1, data);
+
+			if (!result || !result.url) {
+				this.AppError('文件生成失败');
+			}
+
+			return {
+				name: fileName,
+				url: result.url
+			};
+		} catch (err) {
+			console.error('导出用户数据失败:', err);
+			this.AppError('导出用户数据失败: ' + err.message);
+		}
 	}
 
 }

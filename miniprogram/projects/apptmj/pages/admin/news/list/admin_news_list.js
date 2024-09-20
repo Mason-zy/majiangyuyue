@@ -149,8 +149,8 @@ Page({
 		let order = this.data.dataList.list[idx].NEWS_ORDER;
 		let orderDesc = (order == 0) ? '取消置顶' : '置顶';
 
-		let vouch = this.data.dataList.list[idx].NEWS_VOUCH;
-		let vouchDesc = (vouch == 0) ? '推荐到首页' : '取消首页推荐'; 
+		// let vouch = this.data.dataList.list[idx].NEWS_VOUCH;
+		// let vouchDesc = (vouch == 0) ? '推荐到首页' : '取消首页推荐'; 
 
 		let itemList = ['预览', orderDesc, vouchDesc, '生成专属二维码'];
 
