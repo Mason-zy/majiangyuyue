@@ -49,9 +49,9 @@ class NewsService extends BaseProjectService {
 
 		let where = {};
 		where.and = {
-			_pid: this.getProjectId() //复杂的查询在此处标注PID
+			_pid: this.getProjectId(), //复杂的查询在此处标注PID
+			NEWS_STATUS: 1 // 只返回启用状态的资讯
 		};
-		where.NEWS_STATUS = 1; // 状态 
 
 		if (cateId && cateId !== '0') where.and.NEWS_CATE_ID = cateId;
 
