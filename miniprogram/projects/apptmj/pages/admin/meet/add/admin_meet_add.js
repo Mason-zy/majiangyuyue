@@ -102,6 +102,8 @@ Page({
 
 		data.cateName = AdminMeetBiz.getCateName(data.cateId);
 
+		console.log('新增预约表单数据：', JSON.stringify(data, null, 2));
+
 		try {
 			// 先创建，再上传 
 			let result = await cloudHelper.callCloudSumbit('admin/meet_insert', data);

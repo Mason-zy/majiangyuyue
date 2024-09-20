@@ -45,17 +45,54 @@ class AdminMeetService extends BaseProjectAdminService {
 
 	// 按项目统计人数
 	async statJoinCntByMeet(meetId) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			JOIN_MEET_ID: meetId
+		};
+		let ret = await JoinModel.groupCount(where, 'JOIN_STATUS');
+		
+		return {
+			succCnt: ret['JOIN_STATUS_1'] || 0,
+			cancelCnt: ret['JOIN_STATUS_10'] || 0,
+			adminCancelCnt: ret['JOIN_STATUS_99'] || 0
+		};
 	}
 
 	/** 管理员按钮核销 */
 	async checkinJoin(joinId, flag) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let join = await JoinModel.getOne({ _id: joinId });
+		if (!join) {
+			this.AppError('预约记录不存在');
+		}
+
+		let data = {
+			JOIN_STATUS: flag ? JoinModel.STATUS.SUCC : JoinModel.STATUS.CANCEL,
+			JOIN_IS_CHECKIN: flag ? 1 : 0
+		};
+
+		await JoinModel.edit({ _id: joinId }, data);
+
+		return { result: 'ok' };
 	}
 
 	/** 管理员扫码核销 */
 	async scanJoin(meetId, code) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			JOIN_MEET_ID: meetId,
+			JOIN_CODE: code
+		};
+		let join = await JoinModel.getOne(where);
+		if (!join) {
+			this.AppError('预约记录不存在');
+		}
+
+		let data = {
+			JOIN_STATUS: JoinModel.STATUS.SUCC,
+			JOIN_IS_CHECKIN: 1
+		};
+
+		await JoinModel.edit(where, data);
+
+		return { result: 'ok' };
 	}
 
 	/**
@@ -84,8 +121,22 @@ class AdminMeetService extends BaseProjectAdminService {
 
 	/** 取消某个时间段的所有预约记录 */
 	async cancelJoinByTimeMark(meetId, timeMark, reason) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let where = {
+			JOIN_MEET_ID: meetId,
+			JOIN_MEET_TIME_MARK: timeMark,
+			JOIN_STATUS: JoinModel.STATUS.SUCC
+		};
+		
+		let data = {
+			JOIN_STATUS: JoinModel.STATUS.ADMIN_CANCEL,
+			JOIN_CANCEL_TIME: this._timestamp,
+			JOIN_REASON: reason
+		};
+		
+		await JoinModel.edit(where, data);
+		
+		// 更新统计
+		await this.statJoinCnt(meetId, timeMark);
 	}
 
 	// 更新forms信息
@@ -93,10 +144,20 @@ class AdminMeetService extends BaseProjectAdminService {
 		id,
 		hasImageForms
 	}) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let meet = await MeetModel.getOne({_id: id});
+		if (!meet) {
+			this.AppError('未找到该预约');
+		}
 
+		let forms = meet.MEET_FORMS;
+		for (let i = 0; i < forms.length; i++) {
+			if (hasImageForms.includes(forms[i].type)) {
+				forms[i].type = 'image';
+			}
+		}
+
+		await MeetModel.edit({_id: id}, {MEET_FORMS: forms});
 	}
-
 
 	/**添加 */
 	async insertMeet(adminId, {
@@ -109,25 +170,73 @@ class AdminMeetService extends BaseProjectAdminService {
 		forms,
 		joinForms,
 	}) {
+		let data = {
+			MEET_TITLE: title,
+			MEET_ORDER: order,
+			MEET_CANCEL_SET: cancelSet,
+			MEET_CATE_ID: cateId,
+			MEET_CATE_NAME: cateName,
+			MEET_DAYS: daysSet.length,
+			MEET_ADMIN_ID: adminId,
+			MEET_FORMS: forms,
+			MEET_JOIN_FORMS: joinForms,
+			MEET_STATUS: 1,
+			MEET_ADD_TIME: this._timestamp,
+			MEET_EDIT_TIME: this._timestamp
+		};
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let id = await MeetModel.insert(data);
+
+		// 创建每个日期的记录
+		for (let k = 0; k < daysSet.length; k++) {
+			let daySet = daysSet[k];
+			let dayData = {
+				DAY_MEET_ID: id,
+				day: daySet.day,
+				dayDesc: daySet.dayDesc,
+				times: daySet.times
+			};
+			await DayModel.insert(dayData);
+		}
+
+		return {
+			id
+		};
 	}
-
 
 	/**排期设置 */
 	async setDays(id, {
 		daysSet,
 	}) {
+		let meet = await MeetModel.getOne({_id: id});
+		if (!meet) {
+			this.AppError('未找到该预约');
+		}
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		// 先删除原有的日期设置
+		await DayModel.del({DAY_MEET_ID: id});
 
+		// 创建新的日期设置
+		for (let k = 0; k < daysSet.length; k++) {
+			let daySet = daysSet[k];
+			let dayData = {
+				DAY_MEET_ID: id,
+				day: daySet.day,
+				dayDesc: daySet.dayDesc,
+				times: daySet.times
+			};
+			await DayModel.insert(dayData);
+		}
+
+		// 更新预约的日期数量
+		await MeetModel.edit({_id: id}, {MEET_DAYS: daysSet.length, MEET_EDIT_TIME: this._timestamp});
 	}
-
 
 	/**删除数据 */
 	async delMeet(id) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await MeetModel.del({_id: id});
+		await DayModel.del({DAY_MEET_ID: id});
+		await JoinModel.del({JOIN_MEET_ID: id});
 	}
 
 	/**获取信息 */
@@ -149,7 +258,20 @@ class AdminMeetService extends BaseProjectAdminService {
 
 	/** 更新日期设置 */
 	async _editDays(meetId, nowDay, daysSetData) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		// 删除旧的日期设置
+		await DayModel.del({DAY_MEET_ID: meetId, day: ['>=', nowDay]});
+
+		// 添加新的日期设置
+		for (let k = 0; k < daysSetData.length; k++) {
+			let daySet = daysSetData[k];
+			let dayData = {
+				DAY_MEET_ID: meetId,
+				day: daySet.day,
+				dayDesc: daySet.dayDesc,
+				times: daySet.times
+			};
+			await DayModel.insert(dayData);
+		}
 	}
 
 	/**更新数据 */
@@ -164,9 +286,22 @@ class AdminMeetService extends BaseProjectAdminService {
 		forms,
 		joinForms
 	}) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			MEET_TITLE: title,
+			MEET_CATE_ID: cateId,
+			MEET_CATE_NAME: cateName,
+			MEET_ORDER: order,
+			MEET_CANCEL_SET: cancelSet,
+			MEET_DAYS: daysSet.length,
+			MEET_FORMS: forms,
+			MEET_JOIN_FORMS: joinForms,
+			MEET_EDIT_TIME: this._timestamp
+		};
 
+		await MeetModel.edit({_id: id}, data);
 
+		// 更新日期设置
+		await this._editDays(id, timeUtil.time('Y-M-D'), daysSet);
 	}
 
 	/**预约名单分页列表 */
@@ -277,31 +412,59 @@ class AdminMeetService extends BaseProjectAdminService {
 
 	/** 删除 */
 	async delJoin(joinId) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await JoinModel.del({_id: joinId});
 	}
 
 	/**修改报名状态 
 	 * 特殊约定 99=>正常取消 
 	 */
 	async statusJoin(joinId, status, reason = '') {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let join = await JoinModel.getOne({_id: joinId});
+		if (!join) {
+			this.AppError('未找到该预约记录');
+		}
+
+		let data = {
+			JOIN_STATUS: status,
+			JOIN_EDIT_TIME: this._timestamp
+		};
+
+		if (status == JoinModel.STATUS.ADMIN_CANCEL) {
+			data.JOIN_REASON = reason;
+			data.JOIN_CANCEL_TIME = this._timestamp;
+		}
+
+		await JoinModel.edit({_id: joinId}, data);
+
+		// 更新统计
+		await this.statJoinCnt(join.JOIN_MEET_ID, join.JOIN_MEET_TIME_MARK);
 	}
 
 	/**修改项目状态 */
 	async statusMeet(id, status) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			MEET_STATUS: status,
+			MEET_EDIT_TIME: this._timestamp
+		};
+		await MeetModel.edit({_id: id}, data);
 	}
 
 	/**置顶排序设定 */
 	async sortMeet(id, sort) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			MEET_ORDER: sort,
+			MEET_EDIT_TIME: this._timestamp
+		};
+		await MeetModel.edit({_id: id}, data);
 	}
 
 	/**首页设定 */
 	async vouchMeet(id, vouch) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let data = {
+			MEET_VOUCH: vouch,
+			MEET_EDIT_TIME: this._timestamp
+		};
+		await MeetModel.edit({_id: id}, data);
 	}
 
 	//##################模板
@@ -310,9 +473,13 @@ class AdminMeetService extends BaseProjectAdminService {
 		name,
 		times,
 	}, meetId = 'admin') {
-
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let data = {
+			TEMP_NAME: name,
+			TEMP_TIMES: times,
+			TEMP_MEET_ID: meetId,
+			TEMP_ADD_TIME: this._timestamp
+		};
+		await TempModel.insert(data);
 	}
 
 	/**更新数据 */
@@ -321,15 +488,18 @@ class AdminMeetService extends BaseProjectAdminService {
 		limit,
 		isLimit
 	}, meetId = 'admin') {
-
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			TEMP_LIMIT: limit,
+			TEMP_IS_LIMIT: isLimit,
+			TEMP_EDIT_TIME: this._timestamp
+		};
+		await TempModel.edit({_id: id, TEMP_MEET_ID: meetId}, data);
 	}
 
 
 	/**删除数据 */
 	async delMeetTemp(id, meetId = 'admin') {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		await TempModel.del({_id: id, TEMP_MEET_ID: meetId});
 	}
 
 
@@ -364,8 +534,44 @@ class AdminMeetService extends BaseProjectAdminService {
 		endDay,
 		status
 	}) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			JOIN_MEET_ID: meetId,
+			JOIN_MEET_DAY: ['between', startDay, endDay]
+		};
 
+		if (util.isDefined(status) && status != 'all') {
+			where.JOIN_STATUS = Number(status);
+		}
+
+		let orderBy = {
+			JOIN_MEET_DAY: 'asc',
+			JOIN_MEET_TIME_START: 'asc',
+			JOIN_ADD_TIME: 'asc'
+		};
+
+		let joins = await JoinModel.getAll(where, '*', orderBy);
+
+		let data = [];
+		for (let k = 0; k < joins.length; k++) {
+			let join = joins[k];
+			let line = [
+				join.JOIN_MEET_DAY,
+				join.JOIN_MEET_TIME_START,
+				join.JOIN_MEET_TITLE,
+				join.JOIN_STATUS == JoinModel.STATUS.SUCC ? '预约成功' : '已取消',
+				...join.JOIN_FORMS.map(f => f.val)
+			];
+			data.push(line);
+		}
+
+		let fileName = '预约名单' + startDay + '-' + endDay + '.xlsx';
+
+		let xlsxData = await exportUtil.dataToExcel(fileName, data);
+
+		return {
+			filename: fileName,
+			data: xlsxData
+		};
 	}
 
 }
