@@ -69,18 +69,6 @@
 				"selectedIconPath": "/projects/apptmj/images/tabbar/home_cur.png"
 			},
 			{
-				"pagePath": "projects/apptmj/pages/news/cate1/news_cate1",
-				"text": "公告通知",
-				"iconPath": "/projects/apptmj/images/tabbar/news.png",
-				"selectedIconPath": "/projects/apptmj/images/tabbar/news_cur.png"
-			}, 
-			{
-				"pagePath": "projects/apptmj/pages/meet/calendar/meet_calendar",
-				"text": "预订日历",
-				"iconPath": "/projects/apptmj/images/tabbar/day.png",
-				"selectedIconPath": "/projects/apptmj/images/tabbar/day_cur.png"
-			},
-			{
 				"pagePath": "projects/apptmj/pages/my/index/my_index",
 				"text": "我的",
 				"iconPath": "/projects/apptmj/images/tabbar/my.png",

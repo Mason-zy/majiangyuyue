@@ -87,30 +87,30 @@ Page({
 		}
 	},
 
-	_setVouch: async function (e) {
-		if (!AdminBiz.isAdmin(this)) return;
+	// _setVouch: async function (e) {
+	// 	if (!AdminBiz.isAdmin(this)) return;
 
-		let id = pageHelper.dataset(e, 'id');
-		let vouch = pageHelper.dataset(e, 'vouch');
-		if (!id) return;
+	// 	let id = pageHelper.dataset(e, 'id');
+	// 	let vouch = pageHelper.dataset(e, 'vouch');
+	// 	if (!id) return;
 
-		let params = {
-			id,
-			vouch
-		}
+	// 	let params = {
+	// 		id,
+	// 		vouch
+	// 	}
 
-		try {
-			await cloudHelper.callCloudSumbit('admin/news_vouch', params).then(res => {
-				pageHelper.modifyListNode(id, this.data.dataList.list, 'NEWS_VOUCH', vouch);
-				this.setData({
-					dataList: this.data.dataList
-				});
-				pageHelper.showSuccToast('设置成功');
-			});
-		} catch (err) {
-			console.log(err);
-		}
-	},
+	// 	try {
+	// 		await cloudHelper.callCloudSumbit('admin/news_vouch', params).then(res => {
+	// 			pageHelper.modifyListNode(id, this.data.dataList.list, 'NEWS_VOUCH', vouch);
+	// 			this.setData({
+	// 				dataList: this.data.dataList
+	// 			});
+	// 			pageHelper.showSuccToast('设置成功');
+	// 		});
+	// 	} catch (err) {
+	// 		console.log(err);
+	// 	}
+	// },
 
 	_del: async function (e) {
 		if (!AdminBiz.isAdmin(this)) return;
@@ -149,8 +149,8 @@ Page({
 		let order = this.data.dataList.list[idx].NEWS_ORDER;
 		let orderDesc = (order == 0) ? '取消置顶' : '置顶';
 
-		let vouch = this.data.dataList.list[idx].NEWS_VOUCH;
-		let vouchDesc = (vouch == 0) ? '推荐到首页' : '取消首页推荐'; 
+		// let vouch = this.data.dataList.list[idx].NEWS_VOUCH;
+		// let vouchDesc = (vouch == 0) ? '推荐到首页' : '取消首页推荐'; 
 
 		let itemList = ['预览', orderDesc, vouchDesc, '生成专属二维码'];
 
