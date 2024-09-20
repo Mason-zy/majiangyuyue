@@ -25,15 +25,33 @@ class AdminNewsService extends BaseProjectAdminService {
 		desc = '',
 		forms
 	}) {
+		let data = {
+			NEWS_TITLE: title,
+			NEWS_CATE_ID: cateId,
+			NEWS_CATE_NAME: cateName,
+			NEWS_ORDER: order,
+			NEWS_DESC: desc,
+			NEWS_FORMS: forms,
+			NEWS_STATUS: 1,
+			NEWS_ADD_TIME: this._timestamp,
+			NEWS_EDIT_TIME: this._timestamp,
+			NEWS_VIEW_CNT: 0,
+			NEWS_VOUCH: 0,
+			NEWS_OBJ: {},
+			_pid: this.getProjectId()
+		};
 
-
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let id = await NewsModel.insert(data);
+		return { id };
 	}
 
 	/**删除资讯数据 */
 	async delNews(id) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
+		await NewsModel.del(where);
 	}
 
 	/**获取资讯信息 */
@@ -54,8 +72,16 @@ class AdminNewsService extends BaseProjectAdminService {
 		id,
 		hasImageForms
 	}) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
 
+		let data = {
+			NEWS_FORMS: hasImageForms,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 	}
 
 
@@ -67,9 +93,20 @@ class AdminNewsService extends BaseProjectAdminService {
 		id,
 		content // 富文本数组
 	}) {
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			NEWS_CONTENT: content,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 
+		return {
+			urls: content.filter(item => item.type === 'img').map(item => item.val)
+		};
 	}
 
 	/**
@@ -80,11 +117,19 @@ class AdminNewsService extends BaseProjectAdminService {
 		id,
 		imgList // 图片数组
 	}) {
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			NEWS_PIC: imgList,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 
+		return { urls: imgList };
 	}
-
 
 	/**更新资讯数据 */
 	async editNews({
@@ -96,9 +141,21 @@ class AdminNewsService extends BaseProjectAdminService {
 		desc = '',
 		forms
 	}) {
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
-
+		let data = {
+			NEWS_TITLE: title,
+			NEWS_CATE_ID: cateId,
+			NEWS_CATE_NAME: cateName,
+			NEWS_ORDER: order,
+			NEWS_DESC: desc,
+			NEWS_FORMS: forms,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 	}
 
 	/**取得资讯分页列表 */
@@ -162,18 +219,44 @@ class AdminNewsService extends BaseProjectAdminService {
 
 	/**修改资讯状态 */
 	async statusNews(id, status) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
+
+		let data = {
+			NEWS_STATUS: status,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 	}
 
 	/**置顶与排序设定 */
 	async sortNews(id, sort) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
+
+		let data = {
+			NEWS_ORDER: sort,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 	}
 
 	/**首页设定 */
 	async vouchNews(id, vouch) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			_id: id,
+			_pid: this.getProjectId()
+		}
 
+		let data = {
+			NEWS_VOUCH: vouch,
+			NEWS_EDIT_TIME: this._timestamp
+		}
+		await NewsModel.edit(where, data);
 	}
 }
 
