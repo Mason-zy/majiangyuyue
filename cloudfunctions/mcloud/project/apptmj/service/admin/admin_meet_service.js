@@ -552,7 +552,16 @@ class AdminMeetService extends BaseProjectAdminService {
 
 			let joins = await JoinModel.getAll(where, '*', orderBy);
 
-			let data = [];
+			// 添加列名
+			let header = ['预约日期', '预约时间', '预约项目', '预约状态'];
+			
+			// 获取表单字段名称
+			if (joins.length > 0) {
+				header = header.concat(joins[0].JOIN_FORMS.map(f => f.title));
+			}
+
+			let data = [header]; // 将列名作为第一行
+
 			for (let k = 0; k < joins.length; k++) {
 				let join = joins[k];
 				let line = [
@@ -567,7 +576,7 @@ class AdminMeetService extends BaseProjectAdminService {
 
 			let fileName = '预约名单' + startDay + '-' + endDay + '.xlsx';
 
-			let result = await exportUtil.exportDataExcel(EXPORT_JOIN_DATA_KEY, '预约数据', data.length, data);
+			let result = await exportUtil.exportDataExcel(EXPORT_JOIN_DATA_KEY, '预约数据', data.length - 1, data);
 
 			if (!result || !result.url) {
 				throw new Error('文件生成失败');
