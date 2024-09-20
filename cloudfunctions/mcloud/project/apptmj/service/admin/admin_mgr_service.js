@@ -58,7 +58,12 @@ class AdminMgrService extends BaseProjectAdminService {
 	}
 
 	async clearLog() {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		try {
+			await LogModel.clear({});
+			return { success: true, message: '日志清除成功' };
+		} catch (error) {
+			this.AppError('清除日志失败：' + error.message);
+		}
 	}
 
 	/** 取得日志分页列表 */
@@ -154,7 +159,23 @@ class AdminMgrService extends BaseProjectAdminService {
 
 	/** 删除管理员 */
 	async delMgr(id, myAdminId) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (id === myAdminId) {
+			this.AppError('不能删除自己');
+		}
+
+		let where = {
+			_id: id,
+			ADMIN_ID: ['<>', myAdminId]
+		}
+
+		let admin = await AdminModel.getOne(where);
+		if (!admin) {
+			this.AppError('管理员不存在或无权删除');
+		}
+
+		await AdminModel.del(where);
+
+		return { success: true, message: '删除成功' };
 	}
 
 	/** 添加新的管理员 */
@@ -165,13 +186,42 @@ class AdminMgrService extends BaseProjectAdminService {
 		phone,
 		password
 	}) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let data = {
+			ADMIN_NAME: name,
+			ADMIN_DESC: desc,
+			ADMIN_PHONE: phone,
+			ADMIN_TYPE: type,
+			ADMIN_STATUS: 1,
+			ADMIN_ADD_TIME: timeUtil.time(),
+			ADMIN_PASSWORD: md5Lib.md5(password),
+			ADMIN_LOGIN_CNT: 0,
+			ADMIN_LOGIN_TIME: 0,
+			_pid: this.getProjectId()
+		}
 
+		let id = await AdminModel.insert(data);
+		return { success: true, message: '添加成功', id };
 	}
 
 	/** 修改状态 */
 	async statusMgr(id, status, myAdminId) {
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		if (id === myAdminId) {
+			this.AppError('不能修改自己的状态');
+		}
+
+		let where = {
+			_id: id,
+			ADMIN_ID: ['<>', myAdminId]
+		}
+
+		let admin = await AdminModel.getOne(where);
+		if (!admin) {
+			this.AppError('管理员不存在或无权修改');
+		}
+
+		await AdminModel.edit(where, { ADMIN_STATUS: status });
+
+		return { success: true, message: '修改成功' };
 	}
 
 
@@ -197,13 +247,47 @@ class AdminMgrService extends BaseProjectAdminService {
 		password
 	}) {
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let where = {
+			_id: id
+		}
+
+		let admin = await AdminModel.getOne(where);
+		if (!admin) {
+			this.AppError('管理员不存在');
+		}
+
+		let data = {
+			ADMIN_NAME: name,
+			ADMIN_DESC: desc,
+			ADMIN_PHONE: phone,
+			ADMIN_TYPE: type,
+			ADMIN_EDIT_TIME: timeUtil.time(),
+		}
+
+		if (password) {
+			data.ADMIN_PASSWORD = md5Lib.md5(password);
+		}
+
+		await AdminModel.edit(where, data);
+
+		return { success: true, message: '修改成功' };
 	}
 
 	/** 修改自身密码 */
 	async pwdtMgr(adminId, oldPassword, password) {
+		let where = {
+			_id: adminId,
+			ADMIN_PASSWORD: md5Lib.md5(oldPassword)
+		}
 
-		this.AppError('[麻将馆]该功能暂不开放，如有需要请加作者微信：cclinux0730');
+		let admin = await AdminModel.getOne(where);
+		if (!admin) {
+			this.AppError('旧密码错误');
+		}
+
+		await AdminModel.edit(where, { ADMIN_PASSWORD: md5Lib.md5(password) });
+
+		return { success: true, message: '密码修改成功' };
 	}
 }
 
