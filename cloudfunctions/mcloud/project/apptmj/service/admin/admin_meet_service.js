@@ -65,8 +65,9 @@ class AdminMeetService extends BaseProjectAdminService {
 		}
 
 		let data = {
-			JOIN_STATUS: flag ? JoinModel.STATUS.SUCC : JoinModel.STATUS.CANCEL,
-			JOIN_IS_CHECKIN: flag ? 1 : 0
+			JOIN_IS_CHECKIN: flag ,
+			JOIN_CHECKIN_TIME: flag ? this._timestamp : 0,  // 核销时记录时间，取消核销时清除时间
+			JOIN_EDIT_TIME: this._timestamp  // 添加最近修改时间
 		};
 
 		await JoinModel.edit({ _id: joinId }, data);
@@ -87,7 +88,9 @@ class AdminMeetService extends BaseProjectAdminService {
 
 		let data = {
 			JOIN_STATUS: JoinModel.STATUS.SUCC,
-			JOIN_IS_CHECKIN: 1
+			JOIN_IS_CHECKIN: 1,
+			JOIN_CHECKIN_TIME:  this._timestamp ,
+			JOIN_EDIT_TIME: this._timestamp  // 添加最近修改时间
 		};
 
 		await JoinModel.edit(where, data);
@@ -129,14 +132,15 @@ class AdminMeetService extends BaseProjectAdminService {
 		
 		let data = {
 			JOIN_STATUS: JoinModel.STATUS.ADMIN_CANCEL,
-			JOIN_CANCEL_TIME: this._timestamp,
+			JOIN_EDIT_TIME: this._timestamp,
 			JOIN_REASON: reason
 		};
 		
 		await JoinModel.edit(where, data);
 		
 		// 更新统计
-		await this.statJoinCnt(meetId, timeMark);
+        let meetService = new MeetService(); // 创建MeetService实例
+        await meetService.statJoinCnt(meetId, timeMark); // 调用statJoinCnt方法
 	}
 
 	// 更新forms信息
@@ -431,13 +435,13 @@ class AdminMeetService extends BaseProjectAdminService {
 
 		if (status == JoinModel.STATUS.ADMIN_CANCEL) {
 			data.JOIN_REASON = reason;
-			data.JOIN_CANCEL_TIME = this._timestamp;
 		}
 
 		await JoinModel.edit({_id: joinId}, data);
 
 		// 更新统计
-		await this.statJoinCnt(join.JOIN_MEET_ID, join.JOIN_MEET_TIME_MARK);
+        let meetService = new MeetService(); // 创建MeetService实例
+        await meetService.statJoinCnt(join.JOIN_MEET_ID, join.JOIN_MEET_TIME_MARK); // 调用statJoinCnt方法
 	}
 
 	/**修改项目状态 */

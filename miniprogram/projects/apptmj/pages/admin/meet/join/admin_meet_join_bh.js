@@ -257,6 +257,7 @@ module.exports = Behavior({
 
 		bindCheckinTap: async function (e) {
 			let flag = Number(pageHelper.dataset(e, 'flag'));
+			console.log(`核销操作， flag: ${flag}`);
 
 			let callback = async () => {
 				let idx = Number(pageHelper.dataset(e, 'idx'));
