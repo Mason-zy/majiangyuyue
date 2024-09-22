@@ -164,7 +164,7 @@ async function app(event, context) {
 function beforeApp(method) {
 	switch (method) {
 		case 'demo': {
-			return appUtil.handlerAppErr('本系统仅为用户体验演示，后台提交的操作均不生效！如有需要请联系作者微信cclinux0730', appCode.LOGIC);
+			return appUtil.handlerAppErr('演示模式，操作不生效', appCode.LOGIC);
 		}
 	}
 	console.error('事前处理, Method Not Find = ' + method);

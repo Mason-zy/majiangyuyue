@@ -93,7 +93,7 @@
 			<view class="item" wx:if="{{skin.IS_SUB}}" bindtap="url" data-url="/pages/home/about/home_about">
 				<view class="title">
 					<text class="icon-phone title-ico"></text>
-					<text class="text-orange">联系作者了解更多详情</text>
+					<text class="text-orange">联系作者（日火）了解更多详情</text>
 				</view>
 			</view>
 

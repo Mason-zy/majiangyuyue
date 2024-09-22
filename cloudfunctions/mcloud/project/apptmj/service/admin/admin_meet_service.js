@@ -66,7 +66,7 @@ class AdminMeetService extends BaseProjectAdminService {
 
 		let data = {
 			JOIN_IS_CHECKIN: flag ,
-			JOIN_CHECKIN_TIME: flag ? this._timestamp : 0,  // 核销时记录时间，取消核销时清除时间
+			JOIN_CHECKIN_TIME: flag ? this._timestamp : null,  // 核销时记录时间，取消核销时清除时间
 			JOIN_EDIT_TIME: this._timestamp  // 添加最近修改时间
 		};
 
@@ -174,23 +174,34 @@ class AdminMeetService extends BaseProjectAdminService {
 		forms,
 		joinForms,
 	}) {
+		// 处理 MEET_OBJ
+		let meetObj = {
+			desc: forms.find(form => form.mark === 'desc')?.val || '',
+			cover: forms.find(form => form.mark === 'cover')?.val || [],
+			content: forms.find(form => form.mark === 'content')?.val || [] // 处理 content
+		};
+	
+		// 提取 daysSet 中的日期，用于 MEET_DAYS
+		let meetDays = daysSet.map(daySet => daySet.day);
+	
 		let data = {
 			MEET_TITLE: title,
 			MEET_ORDER: order,
 			MEET_CANCEL_SET: cancelSet,
 			MEET_CATE_ID: cateId,
 			MEET_CATE_NAME: cateName,
-			MEET_DAYS: daysSet.length,
+			MEET_DAYS: meetDays,  // 存储的是日期数组，而不是天数
 			MEET_ADMIN_ID: adminId,
 			MEET_FORMS: forms,
 			MEET_JOIN_FORMS: joinForms,
+			MEET_OBJ: meetObj,  // 保存 MEET_OBJ
 			MEET_STATUS: 1,
 			MEET_ADD_TIME: this._timestamp,
 			MEET_EDIT_TIME: this._timestamp
 		};
-
+	
 		let id = await MeetModel.insert(data);
-
+	
 		// 创建每个日期的记录
 		for (let k = 0; k < daysSet.length; k++) {
 			let daySet = daysSet[k];
@@ -202,11 +213,10 @@ class AdminMeetService extends BaseProjectAdminService {
 			};
 			await DayModel.insert(dayData);
 		}
-
-		return {
-			id
-		};
+	
+		return { id };
 	}
+	
 
 	/**排期设置 */
 	async setDays(id, {
@@ -279,34 +289,46 @@ class AdminMeetService extends BaseProjectAdminService {
 	}
 
 	/**更新数据 */
-	async editMeet({
-		id,
-		title,
-		cateId,
-		cateName,
-		order,
-		cancelSet,
-		daysSet,
-		forms,
-		joinForms
-	}) {
-		let data = {
-			MEET_TITLE: title,
-			MEET_CATE_ID: cateId,
-			MEET_CATE_NAME: cateName,
-			MEET_ORDER: order,
-			MEET_CANCEL_SET: cancelSet,
-			MEET_DAYS: daysSet.length,
-			MEET_FORMS: forms,
-			MEET_JOIN_FORMS: joinForms,
-			MEET_EDIT_TIME: this._timestamp
-		};
+async editMeet({
+    id,
+    title,
+    cateId,
+    cateName,
+    order,
+    cancelSet,
+    daysSet,
+    forms,
+    joinForms
+}) {
+    // 提取 daysSet 中的日期，用于 MEET_DAYS
+    let meetDays = daysSet.map(daySet => daySet.day);
 
-		await MeetModel.edit({_id: id}, data);
+    // 处理 MEET_OBJ
+    let meetObj = {
+        desc: forms.find(form => form.mark === 'desc')?.val || '',
+        cover: forms.find(form => form.mark === 'cover')?.val || [],
+		content: forms.find(form => form.mark === 'content')?.val || [] // 处理 content
+    };
 
-		// 更新日期设置
-		await this._editDays(id, timeUtil.time('Y-M-D'), daysSet);
-	}
+    let data = {
+        MEET_TITLE: title,
+        MEET_CATE_ID: cateId,
+        MEET_CATE_NAME: cateName,
+        MEET_ORDER: order,
+        MEET_CANCEL_SET: cancelSet,
+        MEET_DAYS: meetDays,  // 保存日期数组
+        MEET_FORMS: forms,
+        MEET_JOIN_FORMS: joinForms,
+        MEET_OBJ: meetObj,  // 更新 MEET_OBJ
+        MEET_EDIT_TIME: this._timestamp
+    };
+
+    await MeetModel.edit({ _id: id }, data);
+
+    // 更新日期设置
+    await this._editDays(id, timeUtil.time('Y-M-D'), daysSet);
+}
+
 
 	/**预约名单分页列表 */
 	async getJoinList({
