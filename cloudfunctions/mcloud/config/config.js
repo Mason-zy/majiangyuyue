@@ -22,4 +22,6 @@ module.exports = {
 
 	// ### 服务者相关
 	WORK_LOGIN_EXPIRE: 86400, //服务者token过期时间 (秒) 
+
+	LOG_LEVEL: 'debug', // 设置日志级别
 }
