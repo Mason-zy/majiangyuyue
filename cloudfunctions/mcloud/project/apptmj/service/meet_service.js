@@ -9,14 +9,19 @@ const util = require('../../../framework/utils/util.js');
 const MeetModel = require('../model/meet_model.js');
 const JoinModel = require('../model/join_model.js');
 const DayModel = require('../model/day_model.js');
+const LogUtil = require('../../../framework/utils/log_util.js');
 const timeUtil = require('../../../framework/utils/time_util.js');
 const dataUtil = require('../../../framework/utils/data_util.js');
 const projectConfig = require('../public/project_config.js');
 
+const MEET_LOG_LEVEL = 'debug';
 
 class MeetService extends BaseProjectService {
 
-	
+	constructor() {
+		super();
+		this._log = new LogUtil(projectConfig.MEET_LOG_LEVEL);
+	}
 
 	/**
 	 * 抛出异常
